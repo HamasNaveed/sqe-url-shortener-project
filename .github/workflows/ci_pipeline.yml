@@ -1,8 +1,6 @@
 name: CI Pipeline (Source & Build)
 
-# --- STAGE 1: SOURCE (Code Repository & Triggering Pipeline) ---
 on:
-  # Triggers the workflow on push or pull request events to the 'main' branch
   push:
     branches: [ "main" ]
   pull_request:
@@ -11,48 +9,45 @@ on:
 jobs:
   build_artifact:
     name: Build and Containerize
-    # Use an Ubuntu environment for the runner
     runs-on: ubuntu-latest
     
     steps:
-    
-    # 1. Checkout Repository Code (Source Stage)
     - name: Checkout Code
       uses: actions/checkout@v4
       
-    # 2. Setup Node.js Environment
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18' 
         
-    # --- STAGE 2: BUILD (Code Compilation & Dependency Resolution) ---
-    # 3. Install Dependencies
-    - name: Install Project Dependencies (npm install)
+    - name: Install Project Dependencies
       run: npm install
       
-    # 4. Set up Docker Build Environment
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
       
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    # 5. Docker Login
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        # NOTE: This secret must be created in your GitHub Repository Settings
         password: ${{ secrets.DOCKER_HUB_TOKEN }} 
         
-    # 6. Build and Push Docker Image (Artifact Creation)
+    # --- NEW STEP: Convert repo name to lowercase ---
+    - name: Lowercase Repo Name
+      run: |
+        echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+    # --- UPDATED STEP: Use the lowercase env variable ---
     - name: Build and Push Docker Image Artifact
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest
+        # We use env.REPO_LOWER instead of github.repository
+        tags: ghcr.io/${{ env.REPO_LOWER }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
