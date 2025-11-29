@@ -1,0 +1,32 @@
+name: CI/CD Quality Pipeline
+
+on:
+  # Triggers the workflow on push or pull request events to the 'main' branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    
+jobs:
+  # This job handles the Source and Build stages
+  build_and_test:
+    name: Build & Test Application
+    # Use an Ubuntu environment for the runner
+    runs-on: ubuntu-latest
+    
+    steps:
+    
+    # 1. Source Stage (Checkout Code)
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+      # This step ensures the code is available in the runner environment
+      
+    # 2. Build Stage (Install Dependencies)
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18' # Use a stable Node.js version
+        
+    - name: Install Project Dependencies (npm install)
+      run: npm install
+      # This resolves dependencies, which is the core of the Build Stage for a Node.js project [cite: 59, 62]
